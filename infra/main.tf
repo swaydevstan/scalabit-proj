@@ -17,14 +17,14 @@ provider "google" {
   region  = var.region
 }
 
+resource "google_compute_network" "vpc_network" {
+  name                    = "${var.project_name}-vpc"
+  auto_create_subnetworks = false
+}
 
-resource "google_project_service" "enabled_services" {
-  for_each = toset([
-    "compute.googleapis.com",
-    "iap.googleapis.com",
-    "cloudresourcemanager.googleapis.com"
-  ])
-  project            = var.project_id
-  service            = each.key
-  disable_on_destroy = false
+resource "google_compute_subnetwork" "subnet" {
+  name          = "${var.project_name}-subnet"
+  ip_cidr_range = "10.0.0.0/24"
+  region        = var.region
+  network       = google_compute_network.vpc_network.id
 }

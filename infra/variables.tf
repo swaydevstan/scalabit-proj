@@ -7,3 +7,8 @@ variable "region" {
   type    = string
   default = "europe-west2"
 }
+
+variable "project_name" {
+  type    = string
+  default = "scalabit"
+}
