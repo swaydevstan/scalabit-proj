@@ -24,7 +24,7 @@ resource "google_project_service" "enabled_services" {
     "iap.googleapis.com",
     "cloudresourcemanager.googleapis.com"
   ])
-  project = var.project_id
-  service = each.key
+  project            = var.project_id
+  service            = each.key
   disable_on_destroy = false
 }

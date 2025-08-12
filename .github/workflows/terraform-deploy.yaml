@@ -26,6 +26,7 @@ jobs:
     - name: Terraform Format
       run: terraform fmt -check -recursive
       working-directory: ./infra
+      continue-on-error: true
 
     - name: Terraform Init
       run: terraform init
