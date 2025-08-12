@@ -1,9 +1,9 @@
 variable "project_id" {
-  type = string
+  type    = string
   default = "mystic-shelter-468310-a2"
 }
 
 variable "region" {
-  type = string
+  type    = string
   default = "europe-west2"
 }
