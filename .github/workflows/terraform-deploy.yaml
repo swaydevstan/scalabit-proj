@@ -1,0 +1,32 @@
+name: Provision Infra
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  DeployInfra:
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+    
+    - uses: hashicorp/setup-terraform@v3
+      name: Setup Terraform
+
+    - name: Terraform Format
+      run: terraform fmt -check -recursive
+      working-directory: ./infra
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ./infra
