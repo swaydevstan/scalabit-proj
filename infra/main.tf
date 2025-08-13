@@ -131,7 +131,6 @@ resource "google_compute_backend_service" "backend" {
     oauth2_client_id     = data.google_secret_manager_secret_version.oauth2_client_id.secret_data
     oauth2_client_secret = data.google_secret_manager_secret_version.oauth2_client_secret.secret_data
   }
-
   backend {
     group = google_compute_instance_group.k3s_group.id
   }

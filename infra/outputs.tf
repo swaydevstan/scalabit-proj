@@ -3,5 +3,5 @@ output "load_balancer_ip" {
 }
 
 output "access_url" {
-  value = "http://${google_compute_global_address.lb_ip.address}"
+  value = "https://${google_compute_global_address.lb_ip.address}"
 }
