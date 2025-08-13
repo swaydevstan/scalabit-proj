@@ -128,7 +128,6 @@ resource "google_compute_backend_service" "backend" {
   load_balancing_scheme = "EXTERNAL_MANAGED"
 
   iap {
-    enabled              = true
     oauth2_client_id     = data.google_secret_manager_secret_version.oauth2_client_id.secret_data
     oauth2_client_secret = data.google_secret_manager_secret_version.oauth2_client_secret.secret_data
   }
