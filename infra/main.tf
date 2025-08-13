@@ -86,3 +86,38 @@ resource "google_service_account" "scalabit_sa" {
 #   role    = each.value
 #   member  = "serviceAccount:${google_service_account.scalabit_sa.email}"
 # }
+
+resource "google_compute_instance" "scalabit_k3s_node" {
+  name         = "vm-${var.project_name}-k3s-node"
+  machine_type = "e2-medium"
+  zone         = var.zone
+  tags         = ["${var.project_name}-node"]
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+      size  = 50
+      type  = "pd-ssd"
+    }
+  }
+
+  network_interface {
+    network    = google_compute_network.vpc_network.id
+    subnetwork = google_compute_subnetwork.subnet.id
+  }
+
+  service_account {
+    email  = google_service_account.scalabit_sa.email
+    scopes = ["cloud-platform"]
+  }
+
+  metadata = {
+    enable-oslogin = "TRUE"
+  }
+
+  metadata_startup_script = templatefile("${path.module}/setupscript.sh", {
+    project_id = var.project_id
+    region     = var.region
+    repo_name  = google_artifact_registry_repository.repo.name
+  })
+}

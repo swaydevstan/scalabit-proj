@@ -12,3 +12,8 @@ variable "project_name" {
   type    = string
   default = "scalabit"
 }
+
+variable "zone" {
+  type    = string
+  default = "europe-west2-a"
+}
