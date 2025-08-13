@@ -163,12 +163,19 @@ resource "google_compute_url_map" "url_map" {
 }
 
 resource "google_compute_target_https_proxy" "https_proxy" {
-  name    = "${var.project_name}-k3s-https-proxy"
-  url_map = google_compute_url_map.url_map.id
+  name             = "${var.project_name}-k3s-https-proxy"
+  url_map          = google_compute_url_map.url_map.id
+  ssl_certificates = [google_compute_managed_ssl_certificate.ssl_cert.id]
 }
-resource "google_compute_global_forwarding_rule" "http_forwarding_rule" {
+resource "google_compute_managed_ssl_certificate" "ssl_cert" {
+  name = "${var.project_name}-k3s-ssl-cert"
+  managed {
+    domains = ["app.swaydevstan.com"]
+  }
+}
+resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
   name       = "${var.project_name}-k3s-forwarding-rule"
   target     = google_compute_target_https_proxy.https_proxy.id
-  port_range = "80"
+  port_range = "443"
   ip_address = google_compute_global_address.lb_ip.address
 }
