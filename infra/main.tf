@@ -75,7 +75,7 @@ resource "google_service_account" "scalabit_sa" {
   display_name = "Scalabit k3s Node Service Account"
 }
 
-resource "google_project_iam_member" "scalabit_sa_bindings" {
+resource "google_project_iam_binding" "scalabit_sa_bindings" {
   for_each = toset([
     "roles/artifactregistry.reader",
     "roles/logging.logWriter",
@@ -84,5 +84,5 @@ resource "google_project_iam_member" "scalabit_sa_bindings" {
 
   project = var.project_id
   role    = each.value
-  member  = "serviceAccount:${google_service_account.scalabit_sa.email}"
+  members = ["serviceAccount:${google_service_account.scalabit_sa.email}"]
 }
