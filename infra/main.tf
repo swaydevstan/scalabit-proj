@@ -139,7 +139,7 @@ resource "google_compute_backend_service" "backend" {
 resource "google_compute_instance_group" "k3s_group" {
   name      = "${var.project_name}-k3s-group"
   zone      = var.zone
-  instances = [google_compute_instance.scalabit_k3s_node.id]
+  instances = [google_compute_instance.scalabit_k3s_node.self_link]
 
   named_port {
     name = "http"
