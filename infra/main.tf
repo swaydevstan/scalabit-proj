@@ -17,6 +17,14 @@ provider "google" {
   region  = var.region
 }
 
+data "google_secret_manager_secret_version" "oauth2_client_id" {
+  secret = "scalabit-oauth-client-id"
+}
+
+data "google_secret_manager_secret_version" "oauth2_client_secret" {
+  secret = "scalabit-oauth-client-secret"
+}
+
 resource "google_compute_network" "vpc_network" {
   name                    = "${var.project_name}-vpc"
   auto_create_subnetworks = false
@@ -75,18 +83,6 @@ resource "google_service_account" "scalabit_sa" {
   display_name = "Scalabit k3s Node Service Account"
 }
 
-# resource "google_project_iam_member" "scalabit_sa_bindings" {
-#   for_each = toset([
-#     "roles/artifactregistry.reader",
-#     "roles/logging.logWriter",
-#     "roles/monitoring.metricWriter"
-#   ])
-
-#   project = var.project_id
-#   role    = each.value
-#   member  = "serviceAccount:${google_service_account.scalabit_sa.email}"
-# }
-
 resource "google_compute_instance" "scalabit_k3s_node" {
   name         = "vm-${var.project_name}-k3s-node"
   machine_type = "e2-medium"
@@ -120,4 +116,60 @@ resource "google_compute_instance" "scalabit_k3s_node" {
     region     = var.region
     repo_name  = google_artifact_registry_repository.repo.name
   })
+}
+resource "google_compute_global_address" "lb_ip" {
+  name = "${var.project_name}-k3s-lb-ip"
+}
+resource "google_compute_backend_service" "backend" {
+  name                  = "${var.project_name}-k3s-backend"
+  protocol              = "HTTP"
+  timeout_sec           = 30
+  enable_cdn            = false
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  iap {
+    enabled              = true
+    oauth2_client_id     = data.google_secret_manager_secret_version.oauth2_client_id.secret_data
+    oauth2_client_secret = data.google_secret_manager_secret_version.oauth2_client_secret.secret_data
+  }
+
+  backend {
+    group = google_compute_instance_group.k3s_group.id
+  }
+  health_checks = [google_compute_health_check.health_check.id]
+}
+resource "google_compute_instance_group" "k3s_group" {
+  name      = "${var.project_name}-k3s-group"
+  zone      = var.zone
+  instances = [google_compute_instance.scalabit_k3s_node.id]
+
+  named_port {
+    name = "http"
+    port = "80"
+  }
+}
+resource "google_compute_health_check" "health_check" {
+  name               = "${var.project_name}-k3s-health-check"
+  timeout_sec        = 5
+  check_interval_sec = 10
+
+  http_health_check {
+    port         = "80"
+    request_path = "/health"
+  }
+}
+resource "google_compute_url_map" "url_map" {
+  name            = "${var.project_name}-k3s-url-map"
+  default_service = google_compute_backend_service.backend.id
+}
+
+resource "google_compute_target_https_proxy" "https_proxy" {
+  name    = "${var.project_name}-k3s-https-proxy"
+  url_map = google_compute_url_map.url_map.id
+}
+resource "google_compute_global_forwarding_rule" "http_forwarding_rule" {
+  name       = "${var.project_name}-k3s-forwarding-rule"
+  target     = google_compute_target_https_proxy.https_proxy.id
+  port_range = "80"
+  ip_address = google_compute_global_address.lb_ip.address
 }

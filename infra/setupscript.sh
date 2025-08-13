@@ -20,7 +20,7 @@ done
 
 kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.14/deploy/gatekeeper.yaml
 
-kubectl wait --for=condition=ready pod -l app=gatekeeper-controller-manager -n gatekeeper-system --timeout=300s
+kubectl wait --for=condition=Ready pod -l app=gatekeeper-controller-manager -n gatekeeper-system --timeout=300s
 
 sleep 30
 
