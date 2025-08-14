@@ -53,16 +53,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      # - name: Authenticate to Google Cloud
-      #   uses: google-github-actions/auth@v2
-      #   with:
-      #       credentials_json: ${{ secrets.SA_USE }}
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-            project_id: ${{ secrets.GCP_PROJECT_ID }}
-            workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+            credentials_json: ${{ secrets.SA_USE }}
+
+      # - name: Authenticate to Google Cloud
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #       project_id: ${{ secrets.GCP_PROJECT_ID }}
+      #       workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
