@@ -59,7 +59,12 @@ jobs:
             credentials_json: ${{ secrets.SA_USE }}
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
-      
+
+      - name: Configure gcloud components
+        run: |
+          gcloud components install beta
+          gcloud beta --help
+
       - name: Generate temporary SSH key
         run: |
           ssh-keygen -t rsa -f /tmp/temp_ssh_key -N ""
@@ -68,7 +73,7 @@ jobs:
   
       - name: Copy Manifests to VM via IAP
         run: |
-          gcloud compute scp --zone ${{ vars.GCP_ZONE }} \
+          gcloud beta compute scp --zone ${{ vars.GCP_ZONE }} \
             --tunnel-through-iap \
             --ssh-key-file /tmp/temp_ssh_key \
             manifests/ ${{ secrets.VM_NAME }}:~/manifests/ \
