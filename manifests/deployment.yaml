@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scalabit-api
+  namespace: scalabit
+  labels:
+    app: scalabit-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scalabit-api
+  template:
+    metadata:
+      labels:
+        app: scalabit-api
+    spec:
+      containers:
+        - name: scalabit-api
+          image: IMAGE_PLACEHOLDER
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+---

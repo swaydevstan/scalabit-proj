@@ -1,0 +1,74 @@
+name: Deploy App to k3s
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  DeployApp:
+    runs-on: ubuntu-latest
+    env:
+       IMAGE_TAG: europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+            project_id: ${{ secrets.GCP_PROJECT_ID }}
+            workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west2-docker.pkg.dev
+
+
+      - name: Build Docker Image
+        run: |
+            cd ${{ github.workspace }}/app
+            docker build -t $IMAGE_TAG .
+
+      - name: Scan Docker Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: $IMAGE_TAG
+          format: 'table'
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
+
+      - name: Push Image to Artifact Registry
+        run: |
+            docker push $IMAGE_TAG
+
+      - name: Copy Manifests to VM and Deploy App
+        env:
+          VM_NAME: ${{ secrets.VM_NAME }}
+          ZONE: ${{ vars.GCP_ZONE }}
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+
+            gcloud compute scp --tunnel-through-iap --zone "$ZONE" manifests/* ${VM_NAME}:~/ --project "$PROJECT_ID"
+            # Get k3s kubeconfig
+            gcloud compute ssh "$VM_NAME" \
+            --zone="$ZONE" \
+            --command="sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
+            
+            # Update server address
+            sed -i 's/127.0.0.1/$(gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --format="get(networkInterfaces[0].networkIP)")/g' kubeconfig.yaml
+            
+            export KUBECONFIG=./kubeconfig.yaml
+            
+            # Update image in deployment manifest
+            sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" manifests/deployment.yaml
+            
+            # Apply manifests
+            kubectl apply -f manifests/
+            
+            # Wait for rollout
+            kubectl rollout status deployment/node-app -n production --timeout=300s
