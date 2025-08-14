@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  DeployApp:
+  BuildScanPush:
     runs-on: ubuntu-latest
     env:
        IMAGE_TAG: europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:${{ github.sha }}
@@ -45,6 +45,20 @@ jobs:
         run: |
             docker tag scalabit-api:${{ github.sha }} $IMAGE_TAG
             docker push $IMAGE_TAG
+  DeployApp:
+    runs-on: ubuntu-latest
+    needs: BuildScanPush
+    env:
+       IMAGE_TAG: europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+            credentials_json: ${{ secrets.SA_USE }}
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
       - name: Copy Manifests to VM and Deploy App
         env:
           VM_NAME: ${{ secrets.VM_NAME }}
