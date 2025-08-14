@@ -70,24 +70,24 @@ jobs:
         run: |
           gcloud components install beta -q
           
-      # - name: Generate temporary SSH key
-      #   run: |
-      #     ssh-keygen -t rsa -f /tmp/temp_ssh_key -N ""
-      #     chmod 600 /tmp/temp_ssh_key
-      #     gcloud compute os-login ssh-keys add --key-file /tmp/temp_ssh_key.pub --project ${{ secrets.GCP_PROJECT_ID }}
-  
+      - name: Generate temporary SSH key
+        run: |
+          ssh-keygen -t rsa -f /tmp/temp_ssh_key -N ""
+          chmod 600 /tmp/temp_ssh_key
+          # gcloud compute os-login ssh-keys add --key-file /tmp/temp_ssh_key.pub --project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud compute instances add-metadata --zone ${{ vars.GCP_ZONE }} ${{ secrets.VM_NAME }} --metadata-from-file ssh-keys=/tmp/temp_ssh_key.pub  --project ${{ secrets.GCP_PROJECT_ID }}
       - name: Copy Manifests to VM via IAP
         run: |
           gcloud beta compute scp --zone ${{ vars.GCP_ZONE }} \
-            --tunnel-through-iap \
+            # --tunnel-through-iap \
             manifests/ ${{ secrets.VM_NAME }}:~/manifests/ \
             --project ${{ secrets.GCP_PROJECT_ID }}
-            --impersonate-service-account="${{ secrets.SA_USE }}""
+            --ssh-key-file /tmp/temp_ssh_key
 
-      # - name: Clean up temporary SSH key
-      #   if: always()
-      #   run: |
-      #     rm /tmp/temp_ssh_key /tmp/temp_ssh_key.pub
+      - name: Clean up temporary SSH key
+        if: always()
+        run: |
+          rm /tmp/temp_ssh_key /tmp/temp_ssh_key.pub
 
 
       # - name: Deploy App
