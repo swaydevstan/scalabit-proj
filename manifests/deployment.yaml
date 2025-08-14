@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
         - name: scalabit-api
-          image: IMAGE_PLACEHOLDER
+          image: europe-west2-docker.pkg.dev/mystic-shelter-468310-a2/scalabit-repo/scalabit-api:e733c765e0b142b5ae42101ac827490a7056ba33
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
----
