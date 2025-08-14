@@ -59,7 +59,7 @@ jobs:
             credentials_json: ${{ secrets.SA_USE }}
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
-      - name: Copy Manifests to VM and Deploy App
+      - name: ß Deploy App
         env:
           VM_NAME: ${{ secrets.VM_NAME }}
           ZONE: ${{ vars.GCP_ZONE }}
@@ -69,6 +69,7 @@ jobs:
             # Get k3s kubeconfig
             gcloud compute ssh "$VM_NAME" \
             --zone="$ZONE" \
+            --tunnel-through-iap \
             --command="sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
             
             # Update server address
