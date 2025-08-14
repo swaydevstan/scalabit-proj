@@ -83,12 +83,12 @@ jobs:
             --tunnel-through-iap \
             manifests/ ${{ secrets.VM_NAME }}:~/manifests/ \
             --project ${{ secrets.GCP_PROJECT_ID }}
-            --impersonate ${{ secrets.SA_EMAIL }}
+            --impersonate ${{ secrets.SA_USE }}
 
-      - name: Clean up temporary SSH key
-        if: always()
-        run: |
-          rm /tmp/temp_ssh_key /tmp/temp_ssh_key.pub
+      # - name: Clean up temporary SSH key
+      #   if: always()
+      #   run: |
+      #     rm /tmp/temp_ssh_key /tmp/temp_ssh_key.pub
 
 
       # - name: Deploy App
