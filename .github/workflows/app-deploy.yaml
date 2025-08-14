@@ -68,11 +68,13 @@ jobs:
   
       - name: Copy Manifests to VM via IAP
         run: |
-          gcloud beta compute scp --zone ${{ vars.GCP_ZONE }} \
+          gcloud compute scp --zone ${{ vars.GCP_ZONE }} \
             --tunnel-through-iap \
             --ssh-key-file /tmp/temp_ssh_key \
             manifests/ ${{ secrets.VM_NAME }}:~/manifests/ \
             --project ${{ secrets.GCP_PROJECT_ID }}
+
+
       # - name: Deploy App
       #   env:
       #     VM_NAME: ${{ secrets.VM_NAME }}
