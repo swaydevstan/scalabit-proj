@@ -69,7 +69,7 @@ jobs:
             # Get k3s kubeconfig
             gcloud compute ssh "$VM_NAME" \
             --zone="$ZONE" \
-            --tunnel-through-iap \
+            # --tunnel-through-iap \
             --troubleshoot \
             --command="sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
             
