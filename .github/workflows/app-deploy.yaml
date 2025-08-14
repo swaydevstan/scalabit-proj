@@ -81,7 +81,6 @@ jobs:
         run: |
           gcloud beta compute scp --zone ${{ vars.GCP_ZONE }} \
             --tunnel-through-iap \
-            --ssh-key-file /tmp/temp_ssh_key \
             manifests/ ${{ secrets.VM_NAME }}:~/manifests/ \
             --project ${{ secrets.GCP_PROJECT_ID }}
             --impersonate ${{ secrets.SA_EMAIL }}
