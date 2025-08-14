@@ -74,6 +74,11 @@ jobs:
             manifests/ ${{ secrets.VM_NAME }}:~/manifests/ \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Clean up temporary SSH key
+        if: always()
+        run: |
+          rm /tmp/temp_ssh_key /tmp/temp_ssh_key.pub
+
 
       # - name: Deploy App
       #   env:
