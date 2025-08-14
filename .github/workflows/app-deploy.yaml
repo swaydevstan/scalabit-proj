@@ -59,30 +59,43 @@ jobs:
             credentials_json: ${{ secrets.SA_USE }}
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
-      - name: Deploy App
-        env:
-          VM_NAME: ${{ secrets.VM_NAME }}
-          ZONE: ${{ vars.GCP_ZONE }}
-          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Generate temporary SSH key
         run: |
-
-            # Get k3s kubeconfig
-            gcloud compute ssh "$VM_NAME" \
-            --zone="$ZONE" \
+          ssh-keygen -t rsa -f /tmp/temp_ssh_key -N ""
+          chmod 600 /tmp/temp_ssh_key
+          gcloud compute os-login ssh-keys add --key-file /tmp/temp_ssh_key.pub --project ${{ secrets.GCP_PROJECT_ID }}
+  
+      - name: Copy Manifests to VM via IAP
+        run: |
+          gcloud beta compute scp --zone ${{ vars.GCP_ZONE }} \
             --tunnel-through-iap \
-            --project=mystic-shelter-468310-a2
-            --command="sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
+            --ssh-key-file /tmp/temp_ssh_key \
+            manifests/ ${{ secrets.VM_NAME }}:~/manifests/ \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+      # - name: Deploy App
+      #   env:
+      #     VM_NAME: ${{ secrets.VM_NAME }}
+      #     ZONE: ${{ vars.GCP_ZONE }}
+      #     PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      #   run: |
+
+      #       # Get k3s kubeconfig
+      #       gcloud compute ssh "$VM_NAME" \
+      #       --zone="$ZONE" \
+      #       --tunnel-through-iap \
+      #       --command="sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
             
-            # Update server address
-            sed -i 's/127.0.0.1/$(gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --format="get(networkInterfaces[0].networkIP)")/g' kubeconfig.yaml
+      #       # Update server address
+      #       sed -i 's/127.0.0.1/$(gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --format="get(networkInterfaces[0].networkIP)")/g' kubeconfig.yaml
             
-            export KUBECONFIG=./kubeconfig.yaml
+      #       export KUBECONFIG=./kubeconfig.yaml
             
-            # Update image in deployment manifest
-            sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" manifests/deployment.yaml
+      #       # Update image in deployment manifest
+      #       sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" manifests/deployment.yaml
             
-            # Apply manifests
-            kubectl apply -f manifests/
+      #       # Apply manifests
+      #       kubectl apply -f manifests/
             
-            # Wait for rollout
-            kubectl rollout status deployment/node-app -n production --timeout=300s
+      #       # Wait for rollout
+      #       kubectl rollout status deployment/node-app -n production --timeout=300s

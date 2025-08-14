@@ -59,6 +59,17 @@ resource "google_compute_firewall" "allow_iap" {
   source_ranges = ["35.235.240.0/20"]
   target_tags   = ["${var.project_name}-node"]
 }
+
+resource "google_compute_firewall" "allow_gclb" {
+  name    = "allow-gclb"
+  network = google_compute_network.vpc_network.name
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443"]
+  }
+  source_ranges = ["35.191.0.0/16", "130.211.0.0/22"]
+  target_tags   = ["${var.project_name}-node"]
+}
 resource "google_compute_firewall" "allow_internal" {
   name    = "allow-internal"
   network = google_compute_network.vpc_network.name
@@ -126,11 +137,6 @@ resource "google_compute_backend_service" "backend" {
   timeout_sec           = 30
   enable_cdn            = false
   load_balancing_scheme = "EXTERNAL_MANAGED"
-
-  iap {
-    oauth2_client_id     = data.google_secret_manager_secret_version.oauth2_client_id.secret_data
-    oauth2_client_secret = data.google_secret_manager_secret_version.oauth2_client_secret.secret_data
-  }
   backend {
     group = google_compute_instance_group.k3s_group.id
   }

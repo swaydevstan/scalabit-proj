@@ -1,0 +1,12 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAllowedRegistries
+metadata:
+  name: restrict-to-artifact-registry
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  parameters:
+    allowedRegistries:
+      - "europe-west2-docker.pkg.dev/mystic-shelter-468310-a2/scalabit-repo/scalabit-api"

@@ -4,11 +4,12 @@ metadata:
   name: scalabit-api-ingress
   namespace: scalabit
   annotations:
-    kubernetes.io/ingress.class: "traefik"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+      nginx.ingress.kubernetes.io/health-check-path: /health
 spec:
+  ingressClassName: nginx
   rules:
-  - host: app.swaydevstan.com
-    http:
+  - http:
       paths:
       - path: /
         pathType: Prefix
