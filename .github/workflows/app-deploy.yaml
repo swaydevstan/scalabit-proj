@@ -77,14 +77,14 @@ jobs:
       #     # gcloud compute os-login ssh-keys add --key-file /tmp/temp_ssh_key.pub --project ${{ secrets.GCP_PROJECT_ID }}
       #     gcloud compute instances add-metadata --zone ${{ vars.GCP_ZONE }} ${{ secrets.VM_NAME }} --metadata-from-file ssh-keys=/tmp/temp_ssh_key.pub  --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Generate temporary SSH key
-        run: |
-          ssh-keygen -t ed25519 -f temp_deploy_key -N "" -C "github-actions"
-          echo "PUBLIC_KEY=$(cat temp_deploy_key.pub)" >> $GITHUB_ENV
-          gcloud compute instances add-metadata --zone ${{ vars.GCP_ZONE }} ${{ secrets.VM_NAME }}  --metadata "ssh-keys=github-actions:$PUBLIC_KEY" --project ${{ secrets.GCP_PROJECT_ID }}      
+      # - name: Generate temporary SSH key
+      #   run: |
+      #     ssh-keygen -t ed25519 -f temp_deploy_key -N "" -C "github-actions"
+      #     echo "PUBLIC_KEY=$(cat temp_deploy_key.pub)" >> $GITHUB_ENV
+      #     gcloud compute instances add-metadata --zone ${{ vars.GCP_ZONE }} ${{ secrets.VM_NAME }}  --metadata "ssh-keys=github-actions:$PUBLIC_KEY" --project ${{ secrets.GCP_PROJECT_ID }}      
       - name: Copy Manifests to VM via IAP
         run: |
-          gcloud compute scp --zone ${{ vars.GCP_ZONE }} "${{ github.workspace }}/manifests/" github-actions@${{ secrets.VM_NAME }}:~/manifests/ --project ${{ secrets.GCP_PROJECT_ID }} --ssh-key-file=temp_deploy_key --recurse --tunnel-through-iap
+          gcloud compute scp --zone ${{ vars.GCP_ZONE }} "${{ github.workspace }}/manifests/" ${{ secrets.VM_NAME }}:~/manifests/ --project ${{ secrets.GCP_PROJECT_ID }} --recurse --tunnel-through-iap
 
       # - name: Clean up temporary SSH key
       #   if: always()
