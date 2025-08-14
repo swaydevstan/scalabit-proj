@@ -66,7 +66,6 @@ jobs:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
 
-            gcloud compute scp --tunnel-through-iap --zone "$ZONE" manifests/* ${VM_NAME}:~/ --project "$PROJECT_ID"
             # Get k3s kubeconfig
             gcloud compute ssh "$VM_NAME" \
             --zone="$ZONE" \
