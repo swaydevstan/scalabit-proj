@@ -78,7 +78,8 @@ jobs:
             --command="bash -c '
             kubectl apply -f manifests/namespace.yaml &&
             kubectl apply -f manifests/ &&
-            kubectl create secret docker-registry gar-pull --docker-server=$REGION-docker.pkg.dev --docker-username=_json_key --docker-password="$SA_KEY" --namespace scalabit --dry-run=client -o yaml | kubectl apply -f - &&
+            echo $SA_KEY | base64 --decode > sa-key.json &&
+            kubectl create secret docker-registry gar-pull --docker-server=$REGION-docker.pkg.dev --docker-username=_json_key --docker-password="sa-key.json" --namespace scalabit
             '"
 
 
