@@ -7,6 +7,13 @@ spec:
     spec:
       names:
         kind: K8sAllowedRegistries
+      validation:
+        openAPIV3Schema:
+          properties:
+            allowedRegistries:
+              type: array
+              items:
+                type: string
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
