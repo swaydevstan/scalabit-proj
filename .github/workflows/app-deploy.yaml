@@ -61,7 +61,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
       - name: Copy Manifests to VM via IAP
         run: |
-          echo "${{ secrets.SA_USE }}" | base64 --decode > sa-key.json
+          echo "${{ secrets.SA_USE }}" > sa-key.json
           gcloud compute ssh ${{ secrets.VM_NAME }} --zone ${{ vars.GCP_ZONE }} --tunnel-through-iap --command="mkdir -p ~/manifests"
           gcloud compute scp --zone ${{ vars.GCP_ZONE }} sa-key.json ${{ secrets.VM_NAME }}:~ --project ${{ secrets.GCP_PROJECT_ID }} --recurse --tunnel-through-iap
           gcloud compute scp --zone ${{ vars.GCP_ZONE }} manifests/* ${{ secrets.VM_NAME }}:~/manifests/ --project ${{ secrets.GCP_PROJECT_ID }} --recurse --tunnel-through-iap
