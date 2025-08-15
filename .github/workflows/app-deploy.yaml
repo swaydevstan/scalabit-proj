@@ -74,8 +74,8 @@ jobs:
             --zone="$ZONE" \
             --tunnel-through-iap \
             --command="bash -c '
-            sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_TAG}|g" manifests/deployment.yaml &&
             kubectl apply -f manifests/namespace.yaml &&
+            sed -i 's|IMAGE_PLACEHOLDER|$IMAGE_TAG|g' manifests/deployment.yaml &&
             sleep 10 &&
             kubectl apply -f manifests/ &&
             kubectl rollout status deployment/scalabit-api -n scalabit timeout=60s
