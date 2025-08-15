@@ -77,9 +77,10 @@ jobs:
             --tunnel-through-iap \
             --command="bash -c '
             kubectl apply -f manifests/namespace.yaml &&
-            sleep 30 &&
+            sleep 10 &&
             kubectl apply -f manifests/ &&
-            kubectl rollout status deployment/scalabit-api -n scalabit --timeout=300s
+            echo $SA_KEY | base64 --decode > sa-key.json &&
+            kubectl create secret docker-registry gar-pull --docker-server=$REGION-docker.pkg.dev --docker-username=_json_key --docker-password="$(cat sakey.json)" --namespace scalabit --dry-run=client -o yaml | kubectl apply -f -
             '"
 
 
