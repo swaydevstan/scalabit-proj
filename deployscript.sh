@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 IMAGE_TAG="$1"
 sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_TAG}|g" manifests/deployment.yaml
 kubectl apply -f policy/
