@@ -48,8 +48,6 @@ jobs:
   DeployApp:
     runs-on: ubuntu-latest
     needs: BuildScanPush
-    env:
-       IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v4
@@ -70,12 +68,13 @@ jobs:
           ZONE: ${{ vars.GCP_ZONE }}
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ vars.GCP_REGION }}
+          IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:${{ github.sha }}
         run: |
             gcloud compute ssh "$VM_NAME" \
             --zone="$ZONE" \
             --tunnel-through-iap \
             --command="bash -c '
-            sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" manifests/deployment.yaml &&
+            sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_TAG}|g" manifests/deployment.yaml &&
             kubectl apply -f manifests/namespace.yaml &&
             sleep 10 &&
             kubectl apply -f manifests/ &&
