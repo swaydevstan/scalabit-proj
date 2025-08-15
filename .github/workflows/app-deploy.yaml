@@ -79,7 +79,7 @@ jobs:
             kubectl apply -f manifests/namespace.yaml &&
             sleep 30 &&
             kubectl apply -f manifests/ &&
-            kubectl rollout status deployment/scalabit-api -n scalabit --timeout=300s &&
+            kubectl rollout status deployment/scalabit-api -n scalabit --timeout=300s
             '"
 
 
