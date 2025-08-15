@@ -84,7 +84,8 @@ jobs:
       #     gcloud compute instances add-metadata --zone ${{ vars.GCP_ZONE }} ${{ secrets.VM_NAME }}  --metadata "ssh-keys=github-actions:$PUBLIC_KEY" --project ${{ secrets.GCP_PROJECT_ID }}      
       - name: Copy Manifests to VM via IAP
         run: |
-          gcloud compute scp --zone ${{ vars.GCP_ZONE }} "${{ github.workspace }}/manifests/" ${{ secrets.VM_NAME }}:~/manifests/ --project ${{ secrets.GCP_PROJECT_ID }} --recurse --tunnel-through-iap
+          gcloud compute ssh vm-scalabit-k3s-node --zone ${{ vars.GCP_ZONE }} --tunnel-through-iap --command="mkdir -p ~/manifests"
+          gcloud compute scp --zone ${{ vars.GCP_ZONE }} "${{ github.workspace }}/manifests/*" ${{ secrets.VM_NAME }}:~/manifests/ --project ${{ secrets.GCP_PROJECT_ID }} --recurse --tunnel-through-iap
 
       # - name: Clean up temporary SSH key
       #   if: always()
