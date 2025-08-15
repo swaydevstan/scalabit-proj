@@ -69,13 +69,19 @@ jobs:
           VM_NAME: ${{ secrets.VM_NAME }}
           ZONE: ${{ vars.GCP_ZONE }}
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          REGION: ${{ vars.GCP_REGION }}
+          SA_KEY: ${{ secrets.SA_USE}}
         run: |
             gcloud compute ssh "$VM_NAME" \
             --zone="$ZONE" \
             --tunnel-through-iap \
-            --command="kubectl apply -f manifests/"
+            --command="bash -c '
+            kubectl apply -f manifests/namespace.yaml &&
+            kubectl apply -f manifests/ &&
+            kubectl create secret docker-registry gar-pull --docker-server=$REGION-docker.pkg.dev --docker-username=_json_key --docker-password="$SA_KEY" --namespace scalabit --dry-run=client -o yaml | kubectl apply -f - &&
+            '"
 
-            
+
       # - name: Deploy App
       #   env:
       #     VM_NAME: ${{ secrets.VM_NAME }}
