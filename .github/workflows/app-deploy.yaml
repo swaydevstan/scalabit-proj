@@ -8,48 +8,48 @@ permissions:
   contents: read
 
 jobs:
-#   BuildScanPush:
-#     runs-on: ubuntu-latest
-#     env:
-#        IMAGE_TAG: europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:${{ github.sha }}
+  BuildScanPush:
+    runs-on: ubuntu-latest
+    env:
+       IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:${{ github.sha }}
 
-#     steps:
-#       - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-#       - name: Authenticate to Google Cloud
-#         uses: google-github-actions/auth@v2
-#         with:
-#             project_id: ${{ secrets.GCP_PROJECT_ID }}
-#             workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+            project_id: ${{ secrets.GCP_PROJECT_ID }}
+            workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
 
-#       - name: Setup gcloud
-#         uses: google-github-actions/setup-gcloud@v2
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
 
-#       - name: Configure Docker for Artifact Registry
-#         run: gcloud auth configure-docker europe-west2-docker.pkg.dev
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west2-docker.pkg.dev
 
-#       - name: Build Docker Image
-#         run: |
-#             cd ${{ github.workspace }}/app
-#             docker build -t scalabit-api:${{ github.sha }} .
+      - name: Build Docker Image
+        run: |
+            cd ${{ github.workspace }}/app
+            docker build -t scalabit-api:${{ github.sha }} .
 
-#       - name: Scan Docker Image
-#         uses: aquasecurity/trivy-action@master
-#         with:
-#           image-ref: scalabit-api:${{ github.sha }}
-#           format: 'table'
-#           ignore-unfixed: true
-#           severity: 'HIGH,CRITICAL'
+      - name: Scan Docker Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: scalabit-api:${{ github.sha }}
+          format: 'table'
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
 
-#       - name: Push Image to Artifact Registry
-#         run: |
-#             docker tag scalabit-api:${{ github.sha }} $IMAGE_TAG
-#             docker push $IMAGE_TAG
+      - name: Push Image to Artifact Registry
+        run: |
+            docker tag scalabit-api:${{ github.sha }} $IMAGE_TAG
+            docker push $IMAGE_TAG
   DeployApp:
     runs-on: ubuntu-latest
-    # needs: BuildScanPush
+    needs: BuildScanPush
     env:
-       IMAGE_TAG: europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:e733c765e0b142b5ae42101ac827490a7056ba33
+       IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/scalabit-repo/scalabit-api:${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v4
@@ -61,9 +61,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
       - name: Copy Manifests to VM via IAP
         run: |
-          echo "${{ secrets.SA_USE }}" > sa-key.json
           gcloud compute ssh ${{ secrets.VM_NAME }} --zone ${{ vars.GCP_ZONE }} --tunnel-through-iap --command="mkdir -p ~/manifests"
-          gcloud compute scp --zone ${{ vars.GCP_ZONE }} sa-key.json ${{ secrets.VM_NAME }}:~ --project ${{ secrets.GCP_PROJECT_ID }} --recurse --tunnel-through-iap
           gcloud compute scp --zone ${{ vars.GCP_ZONE }} manifests/* ${{ secrets.VM_NAME }}:~/manifests/ --project ${{ secrets.GCP_PROJECT_ID }} --recurse --tunnel-through-iap
 
       - name: Deploy App
@@ -72,43 +70,14 @@ jobs:
           ZONE: ${{ vars.GCP_ZONE }}
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ vars.GCP_REGION }}
-          SA_KEY: ${{ secrets.SA_USE}}
         run: |
             gcloud compute ssh "$VM_NAME" \
             --zone="$ZONE" \
             --tunnel-through-iap \
             --command="bash -c '
+            sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" manifests/deployment.yaml &&
             kubectl apply -f manifests/namespace.yaml &&
             sleep 10 &&
             kubectl apply -f manifests/ &&
-            kubectl create secret docker-registry gar-pull --docker-server=$REGION-docker.pkg.dev --docker-username=_json_key --docker-password="$(cat sa-key.json)" --namespace scalabit --dry-run=client -o yaml | kubectl apply -f - &&
-            rm sa-key.json
+            kubectl rollout status deployment/scalabit-api -n scalabit timeout=60s
             '"
-
-
-      # - name: Deploy App
-      #   env:
-      #     VM_NAME: ${{ secrets.VM_NAME }}
-      #     ZONE: ${{ vars.GCP_ZONE }}
-      #     PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      #   run: |
-
-      #       # Get k3s kubeconfig
-      #       gcloud compute ssh "$VM_NAME" \
-      #       --zone="$ZONE" \
-      #       --tunnel-through-iap \
-      #       --command="sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
-            
-      #       # Update server address
-      #       sed -i 's/127.0.0.1/$(gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --format="get(networkInterfaces[0].networkIP)")/g' kubeconfig.yaml
-            
-      #       export KUBECONFIG=./kubeconfig.yaml
-            
-      #       # Update image in deployment manifest
-      #       sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" manifests/deployment.yaml
-            
-      #       # Apply manifests
-      #       kubectl apply -f manifests/
-            
-      #       # Wait for rollout
-      #       kubectl rollout status deployment/node-app -n production --timeout=300s
