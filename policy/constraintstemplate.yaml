@@ -8,7 +8,6 @@ spec:
       names:
         kind: K8sAllowedRegistries
       validation:
-        # optional validation
         openAPIV3Schema:
           properties:
             allowedRegistries:
@@ -26,6 +25,13 @@ spec:
           allowed := {r | r := input.parameters.allowedRegistries[_]}
           not startswith_any(image, allowed)
           msg := sprintf("Container image <%v> is not from an allowed registry: %v", [image, allowed])
+        }
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          image := container.image
+          allowed := {r | r := input.parameters.allowedRegistries[_]}
+          not startswith_any(image, allowed)
+          msg := sprintf("Init container image <%v> is not from an allowed registry: %v", [image, allowed])
         }
 
         startswith_any(image, prefixes) {
