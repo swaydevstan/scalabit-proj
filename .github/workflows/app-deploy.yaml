@@ -57,42 +57,25 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
             credentials_json: ${{ secrets.SA_USE }}
-
-      # - name: Authenticate to Google Cloud
-      #   uses: google-github-actions/auth@v2
-      #   with:
-      #       project_id: ${{ secrets.GCP_PROJECT_ID }}
-      #       workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure gcloud components
-        run: |
-          gcloud components install beta -q
-          
-      # - name: Generate temporary SSH key
-      #   run: |
-      #     ssh-keygen -t rsa -f /tmp/temp_ssh_key -N ""
-      #     chmod 600 /tmp/temp_ssh_key
-      #     # gcloud compute os-login ssh-keys add --key-file /tmp/temp_ssh_key.pub --project ${{ secrets.GCP_PROJECT_ID }}
-      #     gcloud compute instances add-metadata --zone ${{ vars.GCP_ZONE }} ${{ secrets.VM_NAME }} --metadata-from-file ssh-keys=/tmp/temp_ssh_key.pub  --project ${{ secrets.GCP_PROJECT_ID }}
-
-      # - name: Generate temporary SSH key
-      #   run: |
-      #     ssh-keygen -t ed25519 -f temp_deploy_key -N "" -C "github-actions"
-      #     echo "PUBLIC_KEY=$(cat temp_deploy_key.pub)" >> $GITHUB_ENV
-      #     gcloud compute instances add-metadata --zone ${{ vars.GCP_ZONE }} ${{ secrets.VM_NAME }}  --metadata "ssh-keys=github-actions:$PUBLIC_KEY" --project ${{ secrets.GCP_PROJECT_ID }}      
       - name: Copy Manifests to VM via IAP
         run: |
-          gcloud compute ssh vm-scalabit-k3s-node --zone ${{ vars.GCP_ZONE }} --tunnel-through-iap --command="mkdir -p ~/manifests"
+          gcloud compute ssh ${{ secrets.VM_NAME }} --zone ${{ vars.GCP_ZONE }} --tunnel-through-iap --command="mkdir -p ~/manifests"
           gcloud compute scp --zone ${{ vars.GCP_ZONE }} manifests/* ${{ secrets.VM_NAME }}:~/manifests/ --project ${{ secrets.GCP_PROJECT_ID }} --recurse --tunnel-through-iap
 
-      # - name: Clean up temporary SSH key
-      #   if: always()
-      #   run: |
-      #     rm /tmp/temp_ssh_key /tmp/temp_ssh_key.pub
+      - name: Deploy App
+        env:
+          VM_NAME: ${{ secrets.VM_NAME }}
+          ZONE: ${{ vars.GCP_ZONE }}
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+            gcloud compute ssh "$VM_NAME" \
+            --zone="$ZONE" \
+            --tunnel-through-iap \
+            --command="kubectl apply -f manifests/"
 
-
+            
       # - name: Deploy App
       #   env:
       #     VM_NAME: ${{ secrets.VM_NAME }}
